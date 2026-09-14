@@ -31,6 +31,16 @@ describe("computeEstimate", () => {
         expect(computeEstimate(10, [excluded])).toBeNull();
     });
 
+    it("returns null for a task count of zero", () => {
+        const teams = [makeTeam("FM", 4, 1.0)];
+        expect(computeEstimate(0, teams)).toBeNull();
+    });
+
+    it("returns null for a negative task count", () => {
+        const teams = [makeTeam("FM", 4, 1.0)];
+        expect(computeEstimate(-1, teams)).toBeNull();
+    });
+
     it("returns null when included teams have zero metrics", () => {
         const zero: TeamMetrics = { projectKey: "MR", avgCycleTime: 0, throughput: 0, taskCount: 20, excluded: false };
         expect(computeEstimate(10, [zero])).toBeNull();

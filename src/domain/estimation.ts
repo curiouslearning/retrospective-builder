@@ -66,6 +66,8 @@ export async function fetchAllTeamMetrics(daysBack: number = 90): Promise<TeamMe
  * Returns null if no team has sufficient data.
  */
 export function computeEstimate(taskCount: number, metrics: TeamMetrics[]): EstimationResult | null {
+    if (taskCount <= 0) return null;
+
     const included = metrics.filter(m => !m.excluded && m.avgCycleTime > 0 && m.throughput > 0);
     if (included.length === 0) return null;
 

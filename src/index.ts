@@ -873,9 +873,9 @@ async function main() {
             function updateResult() {
                 const resultArea = document.getElementById('result-area');
                 const rawValue = document.getElementById('taskCount').value;
-                const taskCount = parseInt(rawValue, 10);
+                const taskCount = Number(rawValue);
 
-                if (!rawValue || isNaN(taskCount) || taskCount < 1) {
+                if (!rawValue || isNaN(taskCount) || !Number.isInteger(taskCount) || taskCount < 1) {
                     resultArea.innerHTML = '<div class="result-card"><div class="placeholder">Enter a task count above to see the estimate.</div></div>';
                     return;
                 }
