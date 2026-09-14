@@ -1,8 +1,8 @@
-# retrospective-agent
+# retrospective-builder
 
 ## Overview
 
-The **Retrospective Agent** automates creation of Retrospective documents in Google Docs from Jira data, for Agile Product Managers and Development Leads.
+The **Retrospective Builder** automates creation of Retrospective documents in Google Docs from Jira data, for Agile Product Managers and Development Leads.
 
 ### What It Does
 
@@ -165,8 +165,8 @@ gcloud auth application-default login
 ### 5. Clone and Run
 
 ```bash
-git clone https://github.com/curiouslearning/retrospective-agent.git
-cd retrospective-agent
+git clone https://github.com/curiouslearning/retrospective-builder.git
+cd retrospective-builder
 npm install
 npm run dev
 ```
@@ -243,8 +243,8 @@ Deployment is automated via Cloud Build. Any push to `main` triggers a build and
 To deploy manually:
 
 ```bash
-gcloud run deploy retrospective-agent \
-  --image=us-east1-docker.pkg.dev/gdl-reader-dev/gdl-reader/retrospective-agent:COMMIT_SHA \
+gcloud run deploy retrospective-builder \
+  --image=us-east1-docker.pkg.dev/gdl-reader-dev/gdl-reader/retrospective-builder:COMMIT_SHA \
   --region=us-east1 \
   --platform=managed \
   --allow-unauthenticated \
@@ -256,7 +256,7 @@ commit SHA and never publishes a `:latest` tag. To list what has been built:
 
 ```bash
 gcloud artifacts docker tags list \
-  us-east1-docker.pkg.dev/gdl-reader-dev/gdl-reader/retrospective-agent \
+  us-east1-docker.pkg.dev/gdl-reader-dev/gdl-reader/retrospective-builder \
   --project=gdl-reader-dev
 ```
 
