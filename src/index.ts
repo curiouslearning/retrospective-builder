@@ -9,6 +9,7 @@ import { groupByQuarter } from "./domain/history.js";
 import { sendSlackNotification } from "./integrations/slack.js";
 import { calculateCycleTimesForIssues, aggregateByWeek, aggregateByBiWeek, aggregateByMonth, computeProjectAverageCycleTime } from "./domain/analytics.js";
 import { computeAnticipatedCompletionDate, formatDateMMDDYYYY } from "./domain/anticipatedCompletion.js";
+import { fetchAllTeamMetrics } from "./domain/estimation.js";
 
 async function main() {
     const config = await loadConfig();
@@ -87,6 +88,7 @@ async function main() {
             <a href="#" id="backLink">← Back to Retrospectives</a>
             <div style="display:flex;gap:12px;align-items:center;">
                 <a href="#" id="historyLink" style="color:var(--text-primary);text-decoration:none;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border-color);transition:all 0.2s ease;">📚 History</a>
+                <a href="/estimation" style="color:var(--text-primary);text-decoration:none;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border-color);transition:all 0.2s ease;">🧮 Estimation</a>
                 <button class="theme-toggle" onclick="toggleTheme()">
                     <span id="theme-icon">🌙</span>
                     <span id="theme-text">Dark</span>
@@ -289,6 +291,7 @@ async function main() {
                     <span id="theme-text">Dark</span>
                 </button>
                 <a href="#" id="historyLink" class="header-link secondary"><span>📚</span><span>History</span></a>
+                <a href="/estimation" class="header-link secondary"><span>🧮</span><span>Estimation</span></a>
                 <a href="#" id="analyticsLink" class="header-link"><span>📊</span><span>Analytics</span></a>
             </div>
         </div>
@@ -615,10 +618,13 @@ async function main() {
     <body>
         <div class="nav">
             <a href="#" id="backLink">← Back to Retrospectives</a>
-            <button class="theme-toggle" onclick="toggleTheme()">
-                <span id="theme-icon">🌙</span>
-                <span id="theme-text">Dark</span>
-            </button>
+            <div style="display:flex;gap:12px;align-items:center;">
+                <a href="/estimation" style="color:var(--text-primary);text-decoration:none;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border-color);transition:all 0.2s ease;">🧮 Estimation</a>
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <span id="theme-icon">🌙</span>
+                    <span id="theme-text">Dark</span>
+                </button>
+            </div>
         </div>
         <h1>📚 Retrospective History</h1>
         <p class="subtitle">Completed retrospective documents, organised by quarter</p>
@@ -725,6 +731,214 @@ async function main() {
                 return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
             }
             window.addEventListener('DOMContentLoaded', () => { initTheme(); loadProjects(); });
+        </script>
+    </body>
+    </html>
+    `);
+    });
+
+    app.get("/api/estimation/metrics", async (_req, res) => {
+        try {
+            const metrics = await fetchAllTeamMetrics(90);
+            res.json(metrics);
+        } catch (err: any) {
+            console.error(err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.get("/estimation", (_req, res) => {
+        res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Estimation - Retrospective Generator</title>
+        <style>
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+            @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+            @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+            * { box-sizing: border-box; }
+            :root { --bg-primary: #ffffff; --bg-secondary: #f8f9fa; --bg-card: #ffffff; --text-primary: #1a1a1a; --text-secondary: #6c757d; --border-color: #e9ecef; --accent-primary: #0066ff; --accent-hover: #0052cc; --shadow: 0 2px 8px rgba(0,0,0,0.08); --shadow-hover: 0 4px 16px rgba(0,0,0,0.12); }
+            [data-theme="dark"] { --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-card: #1c2128; --text-primary: #e6edf3; --text-secondary: #8b949e; --border-color: #30363d; --accent-primary: #2f81f7; --accent-hover: #539bf5; --shadow: 0 2px 8px rgba(0,0,0,0.3); --shadow-hover: 0 4px 16px rgba(0,0,0,0.4); }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 32px 20px; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; transition: background-color 0.3s ease, color 0.3s ease; animation: fadeIn 0.6s ease-out; }
+            .nav { margin-bottom: 32px; animation: slideIn 0.6s ease-out; display: flex; justify-content: space-between; align-items: center; }
+            .nav-left { display: flex; gap: 12px; align-items: center; }
+            .nav a { color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border-color); transition: all 0.2s ease; }
+            .nav a:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+            .theme-toggle { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--text-primary); }
+            .theme-toggle:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+            h1 { color: var(--text-primary); margin: 0 0 8px 0; font-size: 32px; font-weight: 700; animation: slideIn 0.6s ease-out; }
+            h1 + p { margin: 0 0 32px 0; color: var(--text-secondary); font-size: 15px; animation: slideIn 0.6s ease-out 0.1s both; }
+            .card { background: var(--bg-card); border: 1px solid var(--border-color); padding: 24px; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 20px; animation: fadeIn 0.5s ease-out backwards; }
+            .card:nth-child(1) { animation-delay: 0.2s; }
+            .card:nth-child(2) { animation-delay: 0.3s; }
+            .input-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+            .input-row label { font-size: 15px; font-weight: 600; color: var(--text-primary); white-space: nowrap; }
+            input[type="number"] { padding: 10px 16px; font-size: 18px; font-weight: 700; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); width: 120px; transition: all 0.2s ease; font-family: inherit; }
+            input[type="number"]:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(0,102,255,0.1); }
+            .hint { font-size: 13px; color: var(--text-secondary); margin-top: 10px; }
+            .result-card { background: var(--bg-card); border: 1px solid var(--border-color); padding: 28px; border-radius: 12px; box-shadow: var(--shadow); animation: fadeIn 0.4s ease-out; }
+            .range-display { font-size: 48px; font-weight: 800; color: var(--accent-primary); margin-bottom: 20px; letter-spacing: -1px; }
+            .case-row { display: flex; flex-direction: column; gap: 12px; }
+            .case-item { display: flex; align-items: baseline; gap: 10px; padding: 14px 16px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); }
+            .case-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); white-space: nowrap; }
+            .case-value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+            .case-team { font-size: 13px; color: var(--text-secondary); font-style: italic; }
+            .case-item.best .case-value { color: #00875a; }
+            .case-item.worst .case-value { color: #de350b; }
+            .floored-note { margin-top: 12px; font-size: 12px; color: var(--text-secondary); padding: 8px 12px; background: var(--bg-secondary); border-radius: 6px; border-left: 3px solid var(--accent-primary); }
+            .loading { text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 16px; font-weight: 600; animation: pulse 2s infinite; }
+            .error { color: #de350b; padding: 16px; background: var(--bg-secondary); border-radius: 8px; font-weight: 600; border-left: 4px solid #de350b; }
+            .placeholder { padding: 40px 20px; text-align: center; color: var(--text-secondary); font-size: 15px; }
+            .metrics-note { font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
+        </style>
+    </head>
+    <body>
+        <div class="nav">
+            <div class="nav-left">
+                <a href="/">← Back to Retrospectives</a>
+                <a href="/analytics">📊 Analytics</a>
+                <a href="/history">📚 History</a>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">🌙</span>
+                <span id="theme-text">Dark</span>
+            </button>
+        </div>
+        <h1>🧮 Estimation</h1>
+        <p>Range estimate based on your teams' last 90 days of performance</p>
+
+        <div class="card" id="input-card">
+            <div id="metrics-status" class="loading">⏳ Loading team metrics…</div>
+            <div id="input-area" style="display:none;">
+                <div class="input-row">
+                    <label for="taskCount">Number of tasks:</label>
+                    <input type="number" id="taskCount" min="1" step="1" placeholder="e.g. 12" />
+                </div>
+                <p class="hint">Enter the total task count from your jira-story-decomposer dry-run breakdown.</p>
+                <div id="metrics-note" class="metrics-note"></div>
+            </div>
+        </div>
+
+        <div id="result-area"></div>
+
+        <script>
+            const API_BASE = window.location.origin;
+            let teamMetrics = null;
+
+            function toggleTheme() {
+                const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeButton(newTheme);
+            }
+            function updateThemeButton(theme) {
+                document.getElementById('theme-icon').textContent = theme === 'dark' ? '☀️' : '🌙';
+                document.getElementById('theme-text').textContent = theme === 'dark' ? 'Light' : 'Dark';
+            }
+            function initTheme() {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                updateThemeButton(savedTheme);
+            }
+
+            function roundHalfUp(n) {
+                const floor = Math.floor(n);
+                return n - floor >= 0.5 ? floor + 1 : floor;
+            }
+
+            function computeEstimate(taskCount, metrics) {
+                const included = metrics.filter(m => !m.excluded && m.avgCycleTime > 0 && m.throughput > 0);
+                if (included.length === 0) return null;
+
+                const slowest = included.reduce((a, b) => a.avgCycleTime > b.avgCycleTime ? a : b);
+                const fastest = included.reduce((a, b) => a.throughput > b.throughput ? a : b);
+
+                const high = taskCount * slowest.avgCycleTime;
+                let low = taskCount / fastest.throughput;
+
+                const floorValue = Math.min(...included.map(m => m.avgCycleTime));
+                const floored = low < floorValue;
+                if (floored) low = floorValue;
+
+                return {
+                    low: roundHalfUp(low),
+                    high: roundHalfUp(high),
+                    lowTeam: fastest.projectKey,
+                    highTeam: slowest.projectKey,
+                    floored
+                };
+            }
+
+            function updateResult() {
+                const resultArea = document.getElementById('result-area');
+                const rawValue = document.getElementById('taskCount').value;
+                const taskCount = Number(rawValue);
+
+                if (!rawValue || isNaN(taskCount) || !Number.isInteger(taskCount) || taskCount < 1) {
+                    resultArea.innerHTML = '<div class="result-card"><div class="placeholder">Enter a task count above to see the estimate.</div></div>';
+                    return;
+                }
+
+                const result = computeEstimate(taskCount, teamMetrics);
+                if (!result) {
+                    resultArea.innerHTML = '<div class="result-card"><div class="error">No team data available to compute an estimate.</div></div>';
+                    return;
+                }
+
+                const flooredNote = result.floored
+                    ? '<div class="floored-note">⚠️ Best-case was raised to the floor value (fastest single-ticket cycle time across teams), since the raw calculation produced a sub-cycle-time estimate.</div>'
+                    : '';
+
+                resultArea.innerHTML = \`
+                    <div class="result-card">
+                        <div class="range-display">\${result.low}–\${result.high} days</div>
+                        <div class="case-row">
+                            <div class="case-item best">
+                                <span class="case-label">Best case</span>
+                                <span class="case-value">\${result.low} days</span>
+                                <span class="case-team">if \${result.lowTeam} team takes it</span>
+                            </div>
+                            <div class="case-item worst">
+                                <span class="case-label">Worst case</span>
+                                <span class="case-value">\${result.high} days</span>
+                                <span class="case-team">if \${result.highTeam} team takes it</span>
+                            </div>
+                        </div>
+                        \${flooredNote}
+                    </div>\`;
+            }
+
+            async function loadMetrics() {
+                const statusEl = document.getElementById('metrics-status');
+                const inputArea = document.getElementById('input-area');
+                try {
+                    const response = await fetch(\`\${API_BASE}/api/estimation/metrics\`);
+                    if (!response.ok) throw new Error('Failed to load team metrics');
+                    teamMetrics = await response.json();
+
+                    const included = teamMetrics.filter(m => !m.excluded);
+                    const excluded = teamMetrics.filter(m => m.excluded);
+                    let noteText = \`Metrics loaded from \${included.length} team\${included.length !== 1 ? 's' : ''} (last 90 days)\`;
+                    if (excluded.length > 0) {
+                        noteText += \` · \${excluded.map(m => m.projectKey).join(', ')} excluded (insufficient data)\`;
+                    }
+                    document.getElementById('metrics-note').textContent = noteText;
+
+                    statusEl.style.display = 'none';
+                    inputArea.style.display = 'block';
+
+                    document.getElementById('result-area').innerHTML =
+                        '<div class="result-card"><div class="placeholder">Enter a task count above to see the estimate.</div></div>';
+
+                    document.getElementById('taskCount').addEventListener('input', updateResult);
+                } catch (err) {
+                    statusEl.classList.remove('loading');
+                    statusEl.innerHTML = \`<div class="error">Error: \${err.message}</div>\`;
+                }
+            }
+
+            window.addEventListener('DOMContentLoaded', () => { initTheme(); loadMetrics(); });
         </script>
     </body>
     </html>
