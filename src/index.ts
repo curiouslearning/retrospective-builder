@@ -886,23 +886,34 @@ async function main() {
                     return;
                 }
 
+                const fastestMetric = teamMetrics.find(m => m.projectKey === result.lowTeam);
+                const slowestMetric = teamMetrics.find(m => m.projectKey === result.highTeam);
+                const throughput = fastestMetric ? fastestMetric.throughput.toFixed(2) : '?';
+                const cycleTime = slowestMetric ? slowestMetric.avgCycleTime : '?';
+                const rawLow = fastestMetric ? roundHalfUp(taskCount / fastestMetric.throughput) : '?';
+
+                const lowMath = result.floored
+                    ? '(floored from ' + rawLow + ' · ' + taskCount + ' tasks ÷ ' + throughput + ' tasks/working day)'
+                    : '(' + taskCount + ' tasks ÷ ' + throughput + ' tasks/working day)';
+                const highMath = '(' + taskCount + ' tasks × ' + cycleTime + ' working days/task)';
+
                 const flooredNote = result.floored
-                    ? '<div class="floored-note">⚠️ Best-case was raised to the floor value (fastest single-ticket cycle time across teams), since the raw calculation produced a sub-cycle-time estimate.</div>'
+                    ? '<div class="floored-note">⚠️ Best-case was raised to the floor value (fastest average cycle time across teams), since the raw calculation produced a sub-cycle-time estimate.</div>'
                     : '';
 
                 resultArea.innerHTML = \`
                     <div class="result-card">
-                        <div class="range-display">\${result.low}–\${result.high} days</div>
+                        <div class="range-display">\${result.low}–\${result.high} working days</div>
                         <div class="case-row">
                             <div class="case-item best">
                                 <span class="case-label">Best case</span>
-                                <span class="case-value">\${result.low} days</span>
-                                <span class="case-team">if \${result.lowTeam} team takes it</span>
+                                <span class="case-value">\${result.low} working days</span>
+                                <span class="case-team">if \${result.lowTeam} team takes it \${lowMath}</span>
                             </div>
                             <div class="case-item worst">
                                 <span class="case-label">Worst case</span>
-                                <span class="case-value">\${result.high} days</span>
-                                <span class="case-team">if \${result.highTeam} team takes it</span>
+                                <span class="case-value">\${result.high} working days</span>
+                                <span class="case-team">if \${result.highTeam} team takes it \${highMath}</span>
                             </div>
                         </div>
                         \${flooredNote}
