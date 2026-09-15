@@ -842,31 +842,31 @@ async function main() {
                 updateThemeButton(savedTheme);
             }
 
-            function roundHalfUp(n) {
-                const floor = Math.floor(n);
-                return n - floor >= 0.5 ? floor + 1 : floor;
-            }
+            const DEV_COUNTS = { MR: 2, FM: 2, AJ: 2 };
 
             function computeEstimate(taskCount, metrics) {
-                const included = metrics.filter(m => !m.excluded && m.avgCycleTime > 0 && m.throughput > 0);
+                if (taskCount <= 0) return null;
+                const included = metrics.filter(m => !m.excluded && m.avgCycleTime > 0);
                 if (included.length === 0) return null;
 
-                const slowest = included.reduce((a, b) => a.avgCycleTime > b.avgCycleTime ? a : b);
-                const fastest = included.reduce((a, b) => a.throughput > b.throughput ? a : b);
+                const estimates = included.map(m => {
+                    const devCount = DEV_COUNTS[m.projectKey] || 1;
+                    const tasksPerDev = Math.ceil(taskCount / devCount);
+                    return { projectKey: m.projectKey, estimate: tasksPerDev * m.avgCycleTime, devCount, tasksPerDev };
+                });
 
-                const high = taskCount * slowest.avgCycleTime;
-                let low = taskCount / fastest.throughput;
-
-                const floorValue = Math.min(...included.map(m => m.avgCycleTime));
-                const floored = low < floorValue;
-                if (floored) low = floorValue;
+                const lowest  = estimates.reduce((a, b) => a.estimate < b.estimate ? a : b);
+                const highest = estimates.reduce((a, b) => a.estimate > b.estimate ? a : b);
 
                 return {
-                    low: roundHalfUp(low),
-                    high: roundHalfUp(high),
-                    lowTeam: fastest.projectKey,
-                    highTeam: slowest.projectKey,
-                    floored
+                    low: lowest.estimate,
+                    high: highest.estimate,
+                    lowTeam: lowest.projectKey,
+                    highTeam: highest.projectKey,
+                    lowDevCount: lowest.devCount,
+                    lowTasksPerDev: lowest.tasksPerDev,
+                    highDevCount: highest.devCount,
+                    highTasksPerDev: highest.tasksPerDev,
                 };
             }
 
@@ -886,20 +886,13 @@ async function main() {
                     return;
                 }
 
-                const fastestMetric = teamMetrics.find(m => m.projectKey === result.lowTeam);
-                const slowestMetric = teamMetrics.find(m => m.projectKey === result.highTeam);
-                const throughput = fastestMetric ? fastestMetric.throughput.toFixed(2) : '?';
-                const cycleTime = slowestMetric ? slowestMetric.avgCycleTime : '?';
-                const rawLow = fastestMetric ? roundHalfUp(taskCount / fastestMetric.throughput) : '?';
+                const lowMetric  = teamMetrics.find(m => m.projectKey === result.lowTeam);
+                const highMetric = teamMetrics.find(m => m.projectKey === result.highTeam);
+                const lowCycleTime  = lowMetric  ? lowMetric.avgCycleTime  : '?';
+                const highCycleTime = highMetric ? highMetric.avgCycleTime : '?';
 
-                const lowMath = result.floored
-                    ? '(floored from ' + rawLow + ' · ' + taskCount + ' tasks ÷ ' + throughput + ' tasks/working day)'
-                    : '(' + taskCount + ' tasks ÷ ' + throughput + ' tasks/working day)';
-                const highMath = '(' + taskCount + ' tasks × ' + cycleTime + ' working days/task)';
-
-                const flooredNote = result.floored
-                    ? '<div class="floored-note">⚠️ Best-case was raised to the floor value (fastest average cycle time across teams), since the raw calculation produced a sub-cycle-time estimate.</div>'
-                    : '';
+                const lowMath  = '(ceil(' + taskCount + ' tasks ÷ ' + result.lowDevCount  + ' devs) = ' + result.lowTasksPerDev  + ' tasks/dev × ' + lowCycleTime  + ' days/task)';
+                const highMath = '(ceil(' + taskCount + ' tasks ÷ ' + result.highDevCount + ' devs) = ' + result.highTasksPerDev + ' tasks/dev × ' + highCycleTime + ' days/task)';
 
                 resultArea.innerHTML = \`
                     <div class="result-card">
@@ -916,7 +909,6 @@ async function main() {
                                 <span class="case-team">if \${result.highTeam} team takes it \${highMath}</span>
                             </div>
                         </div>
-                        \${flooredNote}
                     </div>\`;
             }
 
