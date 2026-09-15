@@ -46,7 +46,7 @@ describe("getCompletedIssuesWithCycleTime", () => {
         const result = await getCompletedIssuesWithCycleTime("BTT", 30);
 
         expect(result).toHaveLength(2);
-        expect(result.map((i) => i.key)).toEqual(["BTT-1", "BTT-2"]);
+        expect(result.map((i: { key: string }) => i.key)).toEqual(["BTT-1", "BTT-2"]);
     });
 
     it("excludes issues assigned to Content Team", async () => {
@@ -60,7 +60,7 @@ describe("getCompletedIssuesWithCycleTime", () => {
         const result = await getCompletedIssuesWithCycleTime("BTT", 30);
 
         expect(result).toHaveLength(2);
-        expect(result.map((i) => i.key)).toEqual(["BTT-1", "BTT-3"]);
+        expect(result.map((i: { key: string }) => i.key)).toEqual(["BTT-1", "BTT-3"]);
     });
 
     it("excludes all issues when all are assigned to Content Team", async () => {
