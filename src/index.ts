@@ -891,8 +891,8 @@ async function main() {
                 const lowCycleTime  = lowMetric  ? lowMetric.avgCycleTime  : '?';
                 const highCycleTime = highMetric ? highMetric.avgCycleTime : '?';
 
-                const lowMath  = '(ceil(' + taskCount + ' tasks ÷ ' + result.lowDevCount  + ' devs) = ' + result.lowTasksPerDev  + ' tasks/dev × ' + lowCycleTime  + ' days/task)';
-                const highMath = '(ceil(' + taskCount + ' tasks ÷ ' + result.highDevCount + ' devs) = ' + result.highTasksPerDev + ' tasks/dev × ' + highCycleTime + ' days/task)';
+                const lowMath  = '(ceil(' + taskCount + ' tasks ÷ ' + result.lowDevCount  + ' devs) = ' + result.lowTasksPerDev  + ' tasks/dev) × ' + lowCycleTime  + ' days/task';
+                const highMath = '(ceil(' + taskCount + ' tasks ÷ ' + result.highDevCount + ' devs) = ' + result.highTasksPerDev + ' tasks/dev) × ' + highCycleTime + ' days/task';
 
                 resultArea.innerHTML = \`
                     <div class="result-card">
